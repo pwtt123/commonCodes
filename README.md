@@ -8,7 +8,8 @@ UI components
 UI components 4 meta
 
 ## meta
-  // 常用接口属性 展示meta对照表
+```
+ // 常用接口属性 展示meta对照表
     /*
           prop: "consumpType", 接口属性名
           label: "收支类型", 显示名称
@@ -23,9 +24,12 @@ UI components 4 meta
           believableValues: [] , 在此数组中的value 直接通过验证
           descProp: 使用此描述prop的值,来作为其他字段的描述
     */
+```
+ 
     
     
 ## apiFunc
+```
 e.g.
 //获取 是否要显示验证码
   //xReq:null
@@ -54,3 +58,4 @@ ApiFunc(xReq,xEvents)
    else 走统一错误处理逻辑
 
 */
+```
