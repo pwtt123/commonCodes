@@ -1,0 +1,82 @@
+<!--按照 settings中 meta 规则 渲染的表格列 -->
+<template>
+    <el-table-column
+                   :sortable="meta.sort"
+                   :label="meta.label"
+                   :min-width="meta.minWidth"
+                   :prop="meta.prop"
+  >
+    <template slot-scope="scope"  class="">
+      <div v-if="scope.row[meta.prop] || scope.row[meta.prop]===0"
+          >
+        <!--数子类型-->
+        <div v-if="meta.type=='num'" class="ellipsis" :title="scope.row[meta.prop]">{{scope.row[meta.prop] | numFormat(null,1)}}</div>
+        <!--金额类型-->
+        <div v-else-if="meta.type=='money'" class="ellipsis" :title="scope.row[meta.prop] | numFormat(2,1)">{{scope.row[meta.prop] | numFormat(2,1)}}</div>
+        <!--时间类型-->
+        <div v-else-if="meta.type=='date'" class="ellipsis" :title="scope.row[meta.prop] | dateFormat('yyyy-MM-dd hh:mm:ss')">{{scope.row[meta.prop] | dateFormat}}</div>
+        <!--标签类型-->
+        <div v-else-if="meta.type=='tag'" class="ellipsis" :title="translate(meta,scope.row).name">
+         <el-tag>{{translate(meta,scope.row).name}}</el-tag>
+        </div>
+
+        <!--二维码-->
+        <div v-else-if="meta.type=='qr'">
+
+          <el-popover
+            placement="left"
+            width="500"
+            trigger="hover"
+          >
+            <div class="uk-text-center">  <qrImg :qrStr="scope.row[meta.prop]" :description="scope.row[meta.descProp]"></qrImg></div>
+            <qrImg slot="reference" style="height: 40px;" :qrStr="scope.row[meta.prop]"></qrImg>
+          </el-popover>
+        </div>
+
+        <!--图片-->
+        <div v-else-if="meta.type=='img'" >
+          <el-popover
+          placement="left"
+          width="500"
+          trigger="hover"
+        >
+          <div class="uk-text-center"><img style="" :src="scope.row[meta.prop]"/></div>
+          <img slot="reference" style="height: 40px;" :src="scope.row[meta.prop]"/>
+        </el-popover>
+        </div>
+
+        <div v-else  class="ellipsis" :title="scope.row[meta.prop]">{{scope.row[meta.prop]}}</div>
+      </div>
+    </template>
+  </el-table-column>
+</template>
+<script>
+  import _ from "underscore"
+  import QrImg from "@/components/QrImg"
+  export default{
+    props:{
+      /* e.g{
+       详见 settings.interfaceMetaMap
+      */
+      meta:{
+        required:true,
+        type:Object
+      }
+    },
+    mounted(){
+    },
+    methods:{
+      // 字典翻译
+      //xMeta,标签id,
+      //xData
+      //return {id:标签id,name:标签名称}
+      translate(xMeta,xData){
+       return  _.findWhere(xMeta.dics(xData[xMeta.prop]),{id:xData[xMeta.prop]}) || {}
+      },
+
+    },
+    components:{
+      QrImg
+    }
+  }
+</script>
