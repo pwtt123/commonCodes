@@ -24,18 +24,24 @@ UI components 4 meta
           believableValues: [] , 在此数组中的value 直接通过验证
           descProp: 使用此描述prop的值,来作为其他字段的描述
     */
+    
+    e.g.  
+    repeatNewPwd: {prop: "repeatNewPwd", label: "重复新密码",type:"pwd", minWidth: "100", sort: false, placeholder: "请再次输入新密码",
+          rules:[{validator(rule, value, callback) {
+              // console.log("test2", rule, value)
+              if (value != settings.interfaceMetaMap.manager.newPwd._value) return callback("两次输入密码不一致！");
+
+              callback();
+            },
+            trigger: "blur"}]
+        },
+    
 ```
  
-    
+   
     
 ## apiFunc
 ```
-e.g.
-//获取 是否要显示验证码
-  //xReq:null
-  getIfShowVerifyCode(xReq,xEvents){
-    return http.post("/bToLogin",xReq,xEvents,{noToken:1})
-  },
 
 /*
 ApiFunc(xReq,xEvents)
@@ -58,4 +64,13 @@ ApiFunc(xReq,xEvents)
    else 走统一错误处理逻辑
 
 */
+
+e.g.
+//获取 是否要显示验证码
+  //xReq:null
+  getIfShowVerifyCode(xReq,xEvents){
+    return http.post("/bToLogin",xReq,xEvents,{noToken:1})
+  },
+
+
 ```
