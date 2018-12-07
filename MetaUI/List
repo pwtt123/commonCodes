@@ -1,0 +1,100 @@
+<!--按照 settings中 meta 规则 渲染的列表 -->
+<!--slots
+  item-left
+  item-right
+  total-left
+  total-right
+
+-->
+<template>
+  <div class=" uk-inline uk-width-1-1"
+       style="min-height: 1.5em"
+       :style="{'padding-left':!totalLabel?0:labelWidth+'px'}"
+  >
+
+    <div class="uk-position-top-left " style="top:-3px;">
+      <img style="max-width:20px; " v-if="totalIcon" :src="totalIcon" alt="">
+      <slot name="total-left"></slot>
+    </div>
+
+    <div v-if="totalLabel" class="uk-position-top-left uk-text-right uk-h5" style="margin: 0" :style="{'width':labelWidth+'px'}">
+      {{totalLabel}} ：
+    </div>
+
+    <div class="uk-text-right ">
+      <slot name="total-right" ></slot>
+    </div>
+
+    <ul class=" uk-grid uk-grid-small" uk-grid
+        :class="'uk-child-width-1-'+colNum"
+    >
+      <ListItem v-for="(xMeta,xKey,xIndex) in metaMap"
+                :key="xKey"
+                :meta="xMeta"
+                :data="data"
+                :noLabel="noLabel"
+                :labelWidth="labelWidth"
+                :style="{'margin-top':xIndex<colNum?'0px':null}"
+      >
+        <div slot="left">
+          <slot name="item-left"></slot>
+        </div>
+        <div slot="right">
+          <slot name="item-right"></slot>
+        </div>
+      </ListItem>
+      <slot></slot>
+    </ul>
+  </div>
+</template>
+<script>
+  import _ from "underscore"
+  import ListItem from "@/components/MetaUI/ListItem"
+
+  export default {
+    props: {
+      /*meta: e.g{
+     详见 settings.interfaceMetaMap
+    */
+      metaMap: {
+        require: true,
+        type: Object
+      },
+      //属性名和 meta 定义一致的 数据对象
+      data: {
+        require: true,
+        type: Object
+      },
+
+      //总的 label
+      totalLabel: {},
+
+      totalIcon: {},
+
+      //所有列，隐藏label
+      noLabel: {},
+
+      labelWidth: {
+        type: Number,
+        default: 120
+      },
+      //列表显示的列数
+      colNum: {
+        type: Number,
+        default: 1
+      }
+    },
+    methods: {
+      // 字典翻译
+      //xMeta,标签id,
+      //xData
+      //return {id:标签id,name:标签名称}
+      translate(xMeta, xData) {
+        return _.findWhere(xMeta.dics(xData[xMeta.prop]), {id: xData[xMeta.prop]}) || {}
+      }
+    },
+    components: {
+      ListItem
+    }
+  }
+</script>
