@@ -1,0 +1,132 @@
+<!--按照 settings中 meta 规则 渲染的列表每一项 -->
+<!--
+slots
+  left
+  right
+-->
+<template>
+  <li class="uk-inline uk-margin-small-bottom"
+      style="min-height: 1.5em"
+      :style="{'padding-left':noLabel?'20px':labelWidth+20+'px'}">
+    <!--icon-->
+    <div class="uk-position-top-left " style="top:-3px;margin-left: 20px">
+      <img style="max-width:20px; " v-if="meta.icon" :src="meta.icon" alt="">
+      <slot name="left"></slot>
+    </div>
+    <!--label-->
+    <div v-if="!noLabel" class="uk-h5  uk-text-right uk-position-top-left " style="margin: 0 0 0 20px;" :style="{'width':labelWidth+'px'}">
+      {{meta.label}} ：
+    </div>
+
+    <!--right-->
+    <div class="uk-float-right">
+      <slot name="right"></slot>
+    </div>
+
+    <!--main-->
+    <div v-if="data[meta.prop] || data[meta.prop]===0" class="" >
+      <!--数子类型-->
+      <span v-if="meta.type=='num'">{{data[meta.prop] | numFormat(null,1)}}</span>
+      <!--金额类型-->
+      <span v-else-if="meta.type=='money'">{{data[meta.prop] | numFormat(2,1)}}</span>
+      <!--时间类型-->
+      <span v-else-if="meta.type=='date'">{{data[meta.prop] | dateFormat('yyyy-MM-dd hh:mm:ss')}}</span>
+      <!--标签类型-->
+      <span v-else-if="meta.type=='tag'">
+          <el-tag>{{translate(meta,data).name}}</el-tag>
+        </span>
+
+      <span v-else-if="meta.type=='link'">
+          <a class="uk-link"
+             title="点击浏览"
+             target="_blank"
+             :href="data[meta.prop] ">
+              {{data[meta.prop]}}
+          </a>
+        </span>
+
+      <!--文件类型-->
+      <span v-else-if="meta.type=='file'">
+          <a class="uk-link"
+             title="点击下载"
+             :href="data[meta.prop]" :download="data[meta.prop]">
+              {{data[meta.descProp] || '点击下载'}}
+            </a>
+        </span>
+
+      <!--二维码-->
+      <span v-else-if="meta.type=='qr'">
+           <el-popover
+             v-if="data[meta.prop]"
+             placement="top"
+             width="500"
+             trigger="hover"
+           >
+             <div class="uk-text-center">
+               <qrImg :qrStr="data[meta.prop]" :description="data[meta.descProp]"></qrImg>
+             </div>
+            <qrImg slot="reference" style="height: 40px;" :qrStr="data[meta.prop]"></qrImg>
+
+            </el-popover>
+        </span>
+
+      <span v-else-if="meta.type=='img'">
+           <el-popover
+             v-if="data[meta.prop]"
+             placement="top"
+             width="500"
+             trigger="hover"
+           >
+              <div class="uk-text-center"><img style="" :src="data[meta.prop]"/></div>
+              <img slot="reference" style="height: 50px;" :src="data[meta.prop]"/>
+            </el-popover>
+        </span>
+
+      <span v-else>{{data[meta.prop]}}</span>
+    </div>
+    <div style="clear: both"></div>
+
+  </li>
+</template>
+<script>
+  import _ from "underscore"
+  import QrImg from "@/components/QrImg"
+
+  export default {
+    props: {
+      /*meta: e.g{
+     详见 settings.interfaceMetaMap
+    */
+      meta: {
+        require: true,
+        type: Object
+      },
+      //属性名和 meta 定义一致的 数据对象
+      data: {
+        require: true,
+        type: Object
+      },
+
+      // 是否不显示label
+      noLabel: {},
+
+      labelWidth: {
+        type: Number,
+        default: 120
+      },
+
+    },
+    methods: {
+      // 字典翻译
+      //meta,标签id,
+      //xData
+      //return {id:标签id,name:标签名称}
+      translate(meta, xData) {
+        return _.findWhere(meta.dics(xData[meta.prop]), {id: xData[meta.prop]}) || {}
+      }
+    },
+    components: {
+      QrImg
+    }
+  }
+</script>
