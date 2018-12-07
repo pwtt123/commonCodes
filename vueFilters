@@ -1,0 +1,71 @@
+import Vue from "vue"
+import _ from "underscore"
+import utils from "@/utils"
+
+// xFormat  e.g:"yyyy-MM-dd hh:mm:ss"  default:null
+// xFormat 不存在  返回类似： "1天前"
+Vue.filter('dateFormat',  (v,xFormat)=> {
+  let zDate=new Date(v);
+  if(String(zDate)== "Invalid Date")return v;
+  if(xFormat)return zDate.format(xFormat);
+
+  let now=new Date();
+  let diff = (now - zDate) / 1000;
+  let zSuffix="前";
+  if(diff <0)zSuffix="后";
+  diff=Math.abs(diff);
+  let zTime="";
+  if (diff > 60 && diff < 3600) { // less 1 hour
+    zTime= Math.floor(diff / 60) + '分钟'
+  } else if (diff < 3600 * 24) {
+    zTime= Math.floor(diff / 3600) + '小时'
+  } else if (diff < 3600 * 24 * 7) {
+    zTime= Math.floor(diff / 3600 / 24) + "天"
+  } else if(diff< 3600 * 24 * 30){
+    zTime= Math.floor(diff / 3600 / 24 / 7) + "周"
+  } else if(diff< 3600 * 24 * 365){
+    zTime= Math.floor(diff / 3600 / 24 / 30) + "月"
+  } else {
+    zTime= (Math.abs(now.getFullYear()-zDate.getFullYear()) || 1) +"年"
+  }
+
+  return  zTime?zTime+zSuffix:"刚刚"
+});
+
+// xFixed, default :2
+Vue.filter("sizeFormat",(v,xFixed)=>{
+  if(isNaN(xFixed))xFixed=null;
+  if(!xFixed && xFixed!==0)xFixed=2;
+    if (isNaN(v)) return v;
+    v = Number(v) || 0;
+    let zExt = "B";
+    _.each(["KB","MB","GB","TB"],(xExt)=>{
+      if (v >= 1024) {
+        zExt = xExt;
+        v = (v / 1024)
+      }
+    });
+    return v.toFixed(xFixed) + zExt
+});
+
+//xFixed ,保留位数,null 则保留全位数
+//ifThousandth, 是否千分位，default:false
+Vue.filter("numFormat",(v,xFixed,ifThousandth)=>{
+  if (isNaN(v)) return v;
+  if(isNaN(xFixed))xFixed=null;
+  let zFixedV=v;
+  if(xFixed) {
+    zFixedV=v.toFixed(xFixed);
+  }
+  let zSplit=String(zFixedV).split(".");
+  if(!ifThousandth || zSplit[0].length<=3)return zFixedV;
+  let zLength=0;
+  let zPre="";
+  for (let i=zSplit[0].length-1;i>=0;i--){
+    if(zLength && zLength%3===0)zPre=","+zPre;
+    zPre=zSplit[0][i]+zPre;
+    zLength++;
+  }
+  zSplit[0]=zPre;
+  return zSplit.join(".");
+});
