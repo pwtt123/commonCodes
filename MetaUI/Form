@@ -1,0 +1,240 @@
+<!--按照 settings中 meta 规则 渲染的表单 -->
+<!--
+methods:
+  refresh() 刷新此组件
+  setFormData(xFormData) 设置表单中的数据为 （深拷贝后的）xFromData，不传则清空
+  getFormData(),return （深拷贝后的） 当前的 formData
+  isFromValidated(xCallback(isValidate,illegalItems))，检查整个表单是否合法  return Promise   详见  http://element-cn.eleme.io/#/zh-CN/component/form
+  clearFormValidate(xCallback(props)), 移除表单的检验结果，详见  http://element-cn.eleme.io/#/zh-CN/component/form
+events:
+  formItemChange(xMeta,xData) 单个表单值改变，返回其meta以及改变后的data
+  formItemValidate(xProp, xIfPassed, err),单个表单验证结果， 详见  http://element-cn.eleme.io/#/zh-CN/component/form
+-->
+
+<template>
+  <el-form :model="formData"
+           label-position="right"
+           :label-width="labelWidth+'px'"
+           :rules="rules"
+           @validate="onFormValidate"
+           ref="metaFrom"
+           status-icon
+           class="uk-list uk-grid uk-grid-small"
+           uk-grid
+           :class="'uk-child-width-1-'+colNum"
+  >
+
+
+    <el-form-item
+      v-for="(xMeta,xKey,xIndex) in metaMap" :key="xIndex"
+      v-if="!xMeta.isHidden"
+      :label="xMeta.label"
+      :prop="xMeta.prop"
+      :class="{['uk-width-2-'+colNum]:xMeta.type=='textarea'}"
+    >
+
+      <!--标签类型-->
+      <el-select @change="onFormItemChange(xMeta,formData[xMeta.prop])"
+                 v-if="xMeta.type=='tag'"
+                 v-model="formData[xMeta.prop]"
+                 :placeholder="xMeta.placeholder">
+        <el-option v-for="(xTag,xIndex) in xMeta.dics()" :label="xTag.name" :value="xTag.id"
+                   :key="xIndex"></el-option>
+      </el-select>
+
+      <!--月份-->
+      <el-date-picker
+        v-else-if="xMeta.type=='month'"
+        v-model="formData[xMeta.prop]"
+        type="month"
+        :picker-options="xMeta.pickerOptions"
+        value-format="yyyy-MM"
+        :placeholder="xMeta.placeholder"
+      >
+      </el-date-picker>
+
+      <!--时间类型-->
+      <el-date-picker type="datetime"
+                      v-else-if="xMeta.type=='date'"
+                      :placeholder="xMeta.placeholder"
+                      v-model="formData[xMeta.prop]"
+                      :default-value="new Date().add('d',1).format('yyyy-MM-dd')+' 10:00:00'"
+                      default-time="10:00:00"
+                      :value-format="$settings.interfaceDateFormat"
+                      @change="onFormItemChange(xMeta,formData[xMeta.prop])"
+      ></el-date-picker>
+
+      <!--用户选择类型-->
+      <div v-else-if="xMeta.type=='userSelect'">
+        <el-select
+          v-model="formData[xMeta.prop]"
+          filterable
+          remote
+          :placeholder="xMeta.placeholder"
+          :remote-method="getUsers(xMeta)"
+          no-data-text="未检索到数据"
+          :loading="xMeta._isLoading"
+        >
+          <el-option v-for="(xUser,xIndex) in xMeta._users"
+                     :label="xUser.realName"
+                     :value="xUser.userId"
+                     :key="xIndex">
+
+          </el-option>
+        </el-select>
+      </div>
+
+      <!--文本框类型-->
+      <el-input v-else :type="{'textarea':'textarea','num':'number','money':'number'}[xMeta.type] || 'text'"
+                @change="onFormItemChange(xMeta,formData[xMeta.prop])"
+                v-model="formData[xMeta.prop]"
+                :placeholder="xMeta.placeholder"></el-input>
+    </el-form-item>
+
+  </el-form>
+</template>
+<script>
+  import _ from "underscore"
+
+  export default {
+    props: {
+      /*meta: e.g{
+        详见 settings.interfaceMetaMap
+    */
+      metaMap: {
+        require: true,
+        type: Object
+      },
+
+      labelWidth: {
+        type: Number,
+        default: 80
+      },
+
+      //列表显示的列数
+      colNum: {
+        type: Number,
+        default: 1
+      },
+
+    },
+    data() {
+      let zRules = this.getRules();
+      return {
+        userKeyword: "",
+        users: [],
+
+
+        formData: {},
+        // 不同类型的字段验证规则
+        rules: zRules
+      }
+    },
+    mounted() {
+
+    },
+    methods: {
+      refresh() {
+        this.$forceUpdate();
+      },
+      setFormData(xFormData) {
+        console.log("aa", xFormData)
+        this.formData = JSON.parse(JSON.stringify(xFormData || {}));
+        this.$forceUpdate();
+      },
+      getFormData() {
+        return JSON.parse(JSON.stringify(this.formData));
+      },
+      numValidator: _.debounce((rule, value, callback) => {
+        if (isNaN(value)) return callback(new Error('输入值必须为数字！'));
+        callback();
+      }, 300),
+
+      // 初始化 users
+      initUsers(xMeta) {
+        // 当  formData 对应属性中有值，并且不存在 _users 中时，设为初始值
+        if (this.formData[xMeta.prop] && !_.findWhere(xMeta._users, {userId: this.formData[xMeta.prop]})) {
+          this.$set(xMeta, "_users", [{realName: this.formData[xMeta.descProp], userId: this.formData[xMeta.prop]}]);
+
+          // 让select显示的value值无视缓存变更,
+          let zSource = this.formData[xMeta.prop];
+          this.formData[xMeta.prop] = this.formData[xMeta.descProp];
+          setTimeout(() => {
+            this.formData[xMeta.prop] = zSource
+          })
+        }
+      },
+
+      getUsers(xMeta) {
+        return (xValue) => {
+          // console.log("aaa")
+          if (!xValue) return this.$set(xMeta, "_users", []);
+          let zReq = {name: xValue};
+          this.$set(xMeta, "_isLoading", true);
+          // 查询关键字对应的用户
+          this.$api.getUsers(zReq).then((res) => {
+            console.log("getUser", res);
+            this.$set(xMeta, "_isLoading", false);
+            this.$set(xMeta, "_users", res.result || []);
+          })
+            .catch((e) => {
+              console.log("getUsersErr", e);
+              this.$set(xMeta, "_isLoading", false);
+            })
+
+        }
+      },
+
+
+      onFormValidate(xProp, xIfPassed, err) {
+        // if(err)console.log("onFormValidate",err);
+        this.$emit("formItemValidate", xProp, xIfPassed, err);
+      },
+      onFormItemChange(xMeta, xData) {
+        // console.log("onFormItemChange",xMeta,xData);
+        this.$emit("formItemChange", xMeta, xData)
+      },
+      isFormValidated(xCallback) {
+        return this.$refs.metaFrom.validate(xCallback)
+      },
+      clearFormValidate(xCallback) {
+        return this.$refs.metaFrom.clearValidate(xCallback)
+      },
+      // 设置 rules
+      getRules() {
+        let zRules = {};
+        _.each(this.metaMap, (xMeta, xKey) => {
+          zRules[xMeta.prop] = _.clone(xMeta.rules) || [];
+          // 当meta 必须，且未隐藏时，增加 required 验证
+          if (!xMeta.noRequired) {
+            zRules[xMeta.prop].push({required: true, message: `${xMeta.label}不能为空`, trigger: 'blur'})
+          }
+          //数字类型验证
+          if (_.contains(['num', 'money', 'phone'], xMeta.type)) {
+            zRules[xMeta.prop].push({validator: this.numValidator, trigger: "change"});
+          }
+          //... 待增加
+        });
+        // console.log("zRules",zRules);
+        // this.$set(this,"rules",zRules);
+        return zRules;
+      }
+    },
+    watch: {
+      formData() {
+        // formData变更时，初始化 user的候选项
+        _.each(this.metaMap, (xMeta) => {
+          if (xMeta.type == 'userSelect') this.initUsers(xMeta)
+        })
+      }
+
+      // metaMap:{
+      //   handler:function(xNew, xOld){
+      //     // 当 meta  属性变更时，重新生成 rules
+      //     this.refresh();
+      //   },
+      //   deep:true
+      // }
+    }
+  }
+</script>
