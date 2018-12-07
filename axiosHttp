@@ -1,0 +1,159 @@
+
+//引入axios
+import axios from 'axios'
+import store from "@/store"
+import qs from 'qs'
+import {Message, MessageBox} from 'element-ui'
+import settings from '@/settings'
+import router from '@/router'
+import _ from 'underscore'
+
+
+//设置默认请求头
+// axios.defaults.headers = {
+//   'X-Requested-With': 'XMLHttpRequest',
+//   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+//   'Access-Control-Expose-Headers': 'token',
+// };
+axios.defaults.timeout = 10000;
+
+//每个请求 的取消列表
+let reqCancelList = {};
+let CancelToken = axios.CancelToken;
+
+//请求拦截器
+axios.interceptors.request.use(config => {
+  //若此请求存在，则取消此请求
+  if (reqCancelList[config.url]) {
+    reqCancelList[config.url].f();
+  }
+  // 把新请求的取消方法保存下来
+  config.cancelToken = new CancelToken((c) => {
+    reqCancelList[config.url] = {f: c};
+  });
+
+  // for cancel test
+  // _.each(reqCancelList,(v)=>{
+  //   v.f();
+  // });
+  // console.log("reqCancelList11",JSON.stringify(reqCancelList))
+  return config
+}, error => {
+  return Promise.reject(error)
+});
+
+//响应拦截器 只返回 res.data
+axios.interceptors.response.use(res => {
+    // console.log("响应拦截器res", res);
+    // 方便处理header 信息，放到data中
+    res.data._headers = res.headers;
+    // 删除对应的取消方法
+    delete reqCancelList[res.config.url];
+    // console.log("reqCancelList22",JSON.stringify(reqCancelList))
+    //http 错误,抛出未知错误
+    if (res.status !== 200) {
+      console.log("httpErr", res);
+      Message.error(settings.errMap.undefinedErr);
+      throw new Error(settings.errMap.undefinedErr);
+    }
+
+    //成功 ,方便处理 ，只返回res.data
+    return res.data
+  },
+  // http 错误
+  // timeout of 10000ms exceeded
+  error => {
+    // 取消的请求不做处理
+    if(error=="Cancel"){
+      return new Promise(()=>{})
+    }
+    error=error || {};
+
+    console.log("httpErr", error);
+
+    let zMsg=settings.errMap.undefinedErr;
+    if( String(error.message).indexOf("timeout")>-1)zMsg=settings.errMap.timeout;
+    Message.error(zMsg);
+    throw new Error(zMsg);
+  });
+
+/*
+  对 axios的 封装
+  xParam，axios 使用的参数对象
+  xEvents:{
+  success,成功的回调
+  err,失败的回调
+  }
+   if(xEvents.err 存在 ) 使用 此回调方法处理错误
+   else 走统一错误处理逻辑
+*/
+let myAxios=(xParam,xEvents,xOptions)=>{
+  xEvents=xEvents||{};
+  return new Promise((resolve, reject) => {
+    axios(xParam)
+      .then((xRes) => {
+        // 业务错误
+        if (!xRes || xRes.code != 200) {
+          console.log("ServerErr",xRes,xOptions);
+          // 用户重新登录 处理
+          if (_.contains(["CTL00002"], xRes.code) && !xOptions.noToken && !xOptions.noErrHandle) {
+            let zMsg =xRes.msg || settings.errMap.denied;
+            MessageBox.alert(zMsg,settings.msgMap.warning,{
+              callback(){
+                store.dispatch(settings.storeDispatchMap.logout);
+                router.push(settings.routeMap.index);
+              }
+            });
+            return
+          }
+          // 其他情况 抛出业务错误信息
+          throw new Error(xRes.msg);
+        }
+
+        // console.log("myAxiosRes",xRes);
+        if(_.isFunction(xEvents.success))xEvents.success(xRes);
+        resolve(xRes)
+      })
+      .catch((err) => {
+        err=err||{};
+        let zErr=err.message || String(err) || settings.errMap.undefinedErr;
+        // 存在err,执行err回调
+        if(_.isFunction(xEvents.err)){
+          xEvents.err(zErr);
+        }
+        // 不存在err,统一错误处理
+        else{
+          Message.error(zErr);
+        }
+        reject(zErr);
+      })
+  });
+};
+export default {
+  //get请求
+  get(url, param, xEvents, xOptions) {
+    xOptions = xOptions || {};
+    // console.log("asdad",url, param,);
+    let zAxiosOptions = {
+      method: 'get',
+      url,
+      params: param,
+      headers: {[settings.tokenKey]: store.state.user.token},
+    };
+    if(xOptions.noToken)delete zAxiosOptions.headers[settings.tokenKey];
+    return myAxios(zAxiosOptions,xEvents,xOptions)
+  },
+  //post请求
+  post(url, param, xEvents, xOptions) {
+    xOptions = xOptions || {};
+    // console.log("param",param)
+    let zAxiosOptions = {
+      method: 'post',
+      url,
+      data: param,
+      headers: {[settings.tokenKey]: store.state.user.token},
+    };
+    if (xOptions.noToken) delete zAxiosOptions.headers[settings.tokenKey];
+    return myAxios(zAxiosOptions,xEvents,xOptions)
+  }
+}
