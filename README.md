@@ -1,76 +1,37 @@
-# commonCodes
-some commonCode 2 download
+# common
 
-## UI
-UI components
+#### 介绍
+常用代码
 
-## MetaUI
-UI components 4 meta
-
-## meta
-```
- // 常用接口属性 展示meta对照表
-    /*
-          prop: "consumpType", 接口属性名
-          label: "收支类型", 显示名称
-          minWidth: "100", 最小宽度
-          sort: 'custom',  true 前端排序/ false 不可排序/ 'custom' 后端排序
-          type:"tag", 显示类型  num/money/data/tag/img/imgList/pwd/month
-          dics():翻译字典, return [{id:"0",name:"无效"}...]  , type 为 "tag" 时必须有
-          placeholder:"请输入账号",表单填充字符
-          rules: 表单验证规则数组，请见 http://element-cn.eleme.io/#/zh-CN/component/form   e.g [ { required: true, message: '请输入活动名称', trigger: 'blur' },{ min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }]
-          ifShow,是否显示
-          noRequired:作为表单提交时是否是不必要的，默认都是必要的
-          believableValues: [] , 在此数组中的value 直接通过验证
-          descProp: 使用此描述prop的值,来作为其他字段的描述
-    */
-    
-    e.g.  
-    repeatNewPwd: {prop: "repeatNewPwd", label: "重复新密码",type:"pwd", minWidth: "100", sort: false, placeholder: "请再次输入新密码",
-          rules:[{validator(rule, value, callback) {
-              // console.log("test2", rule, value)
-              if (value != settings.interfaceMetaMap.manager.newPwd._value) return callback("两次输入密码不一致！");
-
-              callback();
-            },
-            trigger: "blur"}]
-        },
-    
-```
- 
-   
-    
-## apiFunc
-```
-
-/*
-ApiFunc(xReq,xEvents)
-  xReq,:接口参数对象
-  xEvents:{
-    success(data), 成功回调
-    err(err), 失败回调
-  }
-  xOptions:{
-    noToken，此接口不需传token,若传了后端会报错
-    noErrHandle,此接口需要token,但出现权限错误不需进行登出级提示处理
-  }
-
-  return Promise 对象
-    .then(data)
-    xData:axios res.data
+#### 软件架构
+软件架构说明
 
 
-   if(xEvents.err 存在 ) 使用 此回调方法处理错误
-   else 走统一错误处理逻辑
+#### 安装教程
 
-*/
+1. xxxx
+2. xxxx
+3. xxxx
 
-e.g.
-//获取 是否要显示验证码
-  //xReq:null
-  getIfShowVerifyCode(xReq,xEvents){
-    return http.post("/bToLogin",xReq,xEvents,{noToken:1})
-  },
+#### 使用说明
+
+1. xxxx
+2. xxxx
+3. xxxx
+
+#### 参与贡献
+
+1. Fork 本仓库
+2. 新建 Feat_xxx 分支
+3. 提交代码
+4. 新建 Pull Request
 
 
-```
+#### 码云特技
+
+1. 使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
+2. 码云官方博客 [blog.gitee.com](https://blog.gitee.com)
+3. 你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
+4. [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
+5. 码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
+6. 码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

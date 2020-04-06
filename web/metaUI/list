@@ -12,12 +12,12 @@
        :style="{'padding-left':!totalLabel?0:labelWidth+'px'}"
   >
 
-    <div class="uk-position-top-left " style="top:-3px;">
+    <div class="uk-position-top-left" style="top:-3px;padding-left: 5px;">
       <img style="max-width:20px; " v-if="totalIcon" :src="totalIcon" alt="">
       <slot name="total-left"></slot>
     </div>
 
-    <div v-if="totalLabel" class="uk-position-top-left uk-text-right uk-h5" style="margin: 0" :style="{'width':labelWidth+'px'}">
+    <div v-if="totalLabel" class="uk-position-top-left uk-text-right uk-h5" style="margin:0 0 0 5px;" :style="{'width':labelWidth+'px'}">
       {{totalLabel}} ：
     </div>
 
@@ -34,7 +34,6 @@
                 :data="data"
                 :noLabel="noLabel"
                 :labelWidth="labelWidth"
-                :style="{'margin-top':xIndex<colNum?'0px':null}"
       >
         <div slot="left">
           <slot name="item-left"></slot>

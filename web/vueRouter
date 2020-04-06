@@ -1,0 +1,48 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+import settings from "@/settings"
+import _ from "underscore"
+
+Vue.use(Router);
+
+// 更改页面路由请在 settings/index.js .routerMap 中添加
+// 根据 配置信息 settings.routeMap 生成 页面跳转相关 路由
+// routeMap, 路由配置信息
+let getViewRouteMap = (routeMap) => {
+  // console.log("routeMap",routeMap)
+  let zViewRouterMap = [];
+  _.each(routeMap, (xRoute) => {
+    // 生成 每一个路由
+    let zRouter = _.clone(xRoute);
+    // 渲染 children 组件
+    if(xRoute.children)zRouter.children=getViewRouteMap(xRoute.children);
+    zViewRouterMap.push(zRouter)
+  });
+
+  return zViewRouterMap
+};
+
+// 默认路由
+let constantRouterMap=[];
+
+// 增加 页面跳转路由
+constantRouterMap=constantRouterMap.concat(getViewRouteMap(settings.routeMap));
+
+// 其他路由
+constantRouterMap=constantRouterMap.concat([
+  // 不存在页面 跳转到 404
+  {
+    path: '*',
+    component: ()=>import('@/views/404'),
+  }
+]);
+
+
+// console.log("constantRouterMap",constantRouterMap);
+
+
+export default new Router({
+  // mode: 'history', 后端支持可开
+  scrollBehavior: () => ({y: 0}),
+  routes: constantRouterMap
+})

@@ -1,4 +1,3 @@
-
 //引入axios
 import axios from 'axios'
 import store from "@/store"
@@ -9,13 +8,14 @@ import router from '@/router'
 import _ from 'underscore'
 
 
+axios.defaults.baseURL = process.env.API_ROOT;
 //设置默认请求头
-// axios.defaults.headers = {
-//   'X-Requested-With': 'XMLHttpRequest',
-//   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-//   'Access-Control-Expose-Headers': 'token',
-// };
-axios.defaults.timeout = 10000;
+axios.defaults.headers = {
+  'X-Requested-With': 'XMLHttpRequest',
+  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+  'Access-Control-Expose-Headers': 'token',
+};
+axios.defaults.timeout = 20000;
 
 //每个请求 的取消列表
 let reqCancelList = {};
@@ -68,9 +68,6 @@ axios.interceptors.response.use(res => {
       return new Promise(()=>{})
     }
     error=error || {};
-
-    console.log("httpErr", error);
-
     let zMsg=settings.errMap.undefinedErr;
     if( String(error.message).indexOf("timeout")>-1)zMsg=settings.errMap.timeout;
     Message.error(zMsg);
@@ -89,25 +86,48 @@ axios.interceptors.response.use(res => {
 */
 let myAxios=(xParam,xEvents,xOptions)=>{
   xEvents=xEvents||{};
+
+  let zErrHandle=(err,reject,errCallback)=>{
+    // 存在err,执行err回调
+    if(_.isFunction(errCallback)){
+      errCallback(err);
+    } // 不存在err,统一错误处理
+    else{
+      Message.error(err.msg || settings.errMap.undefinedErr);
+    }
+    // 执行promise的reject
+    if(_.isFunction(reject)){
+      reject(err);
+    }
+  };
+
   return new Promise((resolve, reject) => {
     axios(xParam)
       .then((xRes) => {
         // 业务错误
-        if (!xRes || xRes.code != 200) {
-          console.log("ServerErr",xRes,xOptions);
+        if (!xRes || xRes.state !== 200) {
+          console.log("serverErr",xRes,xOptions);
           // 用户重新登录 处理
-          if (_.contains(["CTL00002"], xRes.code) && !xOptions.noToken && !xOptions.noErrHandle) {
+          // 1001 token为空
+          // 1002 没有权限
+          // 1003 token过期
+          // 1004 其他设备登录
+          if (_.contains([1001,1002,1003,1004], xRes.state) && !xOptions.noToken && !xOptions.noErrHandle) {
             let zMsg =xRes.msg || settings.errMap.denied;
-            MessageBox.alert(zMsg,settings.msgMap.warning,{
+            MessageBox.alert(zMsg,{
               callback(){
                 store.dispatch(settings.storeDispatchMap.logout);
-                router.push(settings.routeMap.index);
+                router.push(settings.routeMap.login);
               }
             });
             return
           }
           // 其他情况 抛出业务错误信息
-          throw new Error(xRes.msg);
+          let zErr={state:xRes.state,msg:xRes.msg,data:xRes.data};
+
+          zErrHandle(zErr,reject,xEvents.err);
+          // throw new Error(xRes.msg);
+          return;
         }
 
         // console.log("myAxiosRes",xRes);
@@ -116,16 +136,9 @@ let myAxios=(xParam,xEvents,xOptions)=>{
       })
       .catch((err) => {
         err=err||{};
-        let zErr=err.message || String(err) || settings.errMap.undefinedErr;
-        // 存在err,执行err回调
-        if(_.isFunction(xEvents.err)){
-          xEvents.err(zErr);
-        }
-        // 不存在err,统一错误处理
-        else{
-          Message.error(zErr);
-        }
-        reject(zErr);
+        let zErr={msg:err.message || String(err) || settings.errMap.undefinedErr};
+
+        zErrHandle(zErr,reject,xEvents.err);
       })
   });
 };
@@ -150,7 +163,7 @@ export default {
     let zAxiosOptions = {
       method: 'post',
       url,
-      data: param,
+      data: qs.stringify(param),
       headers: {[settings.tokenKey]: store.state.user.token},
     };
     if (xOptions.noToken) delete zAxiosOptions.headers[settings.tokenKey];

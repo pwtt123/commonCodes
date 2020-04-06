@@ -15,7 +15,9 @@ Vue.filter('dateFormat',  (v,xFormat)=> {
   if(diff <0)zSuffix="后";
   diff=Math.abs(diff);
   let zTime="";
-  if (diff > 60 && diff < 3600) { // less 1 hour
+  if (diff<=60){
+    zTime=""
+  } else if (diff < 3600) { // less 1 hour
     zTime= Math.floor(diff / 60) + '分钟'
   } else if (diff < 3600 * 24) {
     zTime= Math.floor(diff / 3600) + '小时'
@@ -26,7 +28,7 @@ Vue.filter('dateFormat',  (v,xFormat)=> {
   } else if(diff< 3600 * 24 * 365){
     zTime= Math.floor(diff / 3600 / 24 / 30) + "月"
   } else {
-    zTime= (Math.abs(now.getFullYear()-zDate.getFullYear()) || 1) +"年"
+    zTime=(new Date(diff*1000).getFullYear()-new Date(0).getFullYear()+Math.round((new Date(diff*1000).getMonth()+1)/12)) +"年"
   }
 
   return  zTime?zTime+zSuffix:"刚刚"
@@ -69,3 +71,5 @@ Vue.filter("numFormat",(v,xFixed,ifThousandth)=>{
   zSplit[0]=zPre;
   return zSplit.join(".");
 });
+
+

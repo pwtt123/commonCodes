@@ -1,0 +1,167 @@
+<!--框架组件，管理页面的container-->
+<!--
+slots:
+  header : 页面顶部header
+  main-head: 主div 头部
+  main-body: 主div 主体
+  detail-head: 详细侧边栏 头部
+  detail-body 详细侧边栏 主体
+
+methods:
+  openDetailDiv()
+  closeDetailDiv()
+
+-->
+
+<template>
+  <el-container>
+    <div style="position: absolute;top:0px;height:60px;left:0;right:0;">
+      <el-header>
+        <slot name="header"></slot>
+      </el-header>
+    </div>
+    <div style="position: absolute;top:60px;bottom: 0px;left:10px;right:10px;">
+      <!--main-->
+      <!--transition-position-->
+      <div class="  " :class="isDetailFilled?'':'transition-position'" style="position:absolute;top:0px;bottom:0px;left:0px;"
+           :style="{right:ifDetailDivShow?(isDetailFilled?'100%':detailDivWidth+'px'):'0'}">
+        <!--title-->
+        <div class="uk-text-nowrap uk-overflow-hidden" style="position:absolute;top:0;height:60px;right:0;left:0"
+             :style="{height:divTitleHeight+'px'}"
+        >
+          <div class="uk-padding-top"></div>
+          <img v-if="icon" :src="icon" alt="" style="height: 35px;position: relative;top:-6px;">
+          <div class="uk-h3 uk-margin-right" v-show="!ifTitleHidden"
+               style="width: 110px; margin: 0;display: inline-block">
+            {{mainTitle}}
+          </div>
+
+          <!--transition-size-->
+          <div style="display: inline-block;" class="uk-inline  background-default"
+               :class="isDetailFilled?'':'transition-size'"
+               :style="{width:'calc(100% - '+ ((ifTitleHidden?50:180) + (ifDetailDivShow?0:detailOpenDivWidth)) +'px)'}"
+          >
+            <slot name="main-head"></slot>
+          </div>
+        </div>
+        <!--body-->
+        <div style="position:absolute;bottom:0;right:0;left:0"
+             :style="{top:divTitleHeight+'px'}"
+        >
+          <slot name="main-body"></slot>
+        </div>
+      </div>
+
+      <!--detail-->
+      <!--title-->
+      <!--transition-size-->
+      <div v-show="!ifDetailHidden" class="uk-overflow-hidden   background-default"
+           :class="isDetailFilled?'':'transition-size'"
+           style="position:absolute;top:0;right:0"
+           :style="{width:ifDetailDivShow?(isDetailFilled?'100%':detailDivWidth+'px'):(isDetailFilled?0:detailOpenDivWidth+'px'),height:divTitleHeight+'px'}"
+      >
+        <div class="  uk-padding-top uk-text-nowrap "
+        >
+          <div @click="clickDetailDivTitle" class="uk-h4 clickable "
+               :class="{'uk-disabled':ifDetailOpenBtnDisabled}"
+               style="display: inline-block;"
+              :style="{width:detailTitleWidth+'px'}"
+          >
+            <span v-if="!isDetailFilled">
+              <li v-show="!ifDetailDivShow" class="el-icon-arrow-left"></li>
+              <li v-show="ifDetailDivShow" class="el-icon-arrow-right"></li>
+            </span>
+            <el-button v-show="ifDetailDivShow" v-if="isDetailFilled" type="primary" plain circle style="padding:8px;">
+              <li  class="el-icon-arrow-left"></li>
+            </el-button>
+            <span class=" ">{{detailTitle}}</span>
+          </div>
+
+          <div style="display: inline-block;" class="uk-inline  background-default"
+               :style="{width:'calc('+(isDetailFilled?'100%':(detailDivWidth+'px'))+' - '+detailTitleWidth+'px)'}">
+            <div style="padding-right: 10px;">
+              <slot name="detail-head"></slot>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--body-->
+      <!--transition-size-->
+      <div v-show="!ifDetailHidden" style="position:absolute;bottom:0px;right:0"
+           :class="isDetailFilled?'':'transition-size'"
+           class=" uk-overflow-hidden background-default "
+           :style="{width:ifDetailDivShow?(isDetailFilled?'100%':detailDivWidth+'px'):0,top:divTitleHeight+'px'}">
+        <div style="position: relative;height: 100%;" :style="{width:(isDetailFilled?'100%':detailDivWidth+'px')}"
+             class="uk-overflow-auto">
+          <div>
+            <hr>
+            <slot name="detail-body"></slot>
+          </div>
+        </div>
+      </div>
+    </div>
+  </el-container>
+</template>
+<script>
+  export default {
+    props: {
+      mainTitle: {default: "mainTitle"},
+      detailTitle: {default: "detailTitle"},
+
+      //显示图标
+      icon: {default: ""},
+      ifDetailDivShow: {default: false},
+
+      //展开详细侧边栏按钮是否disabled
+      ifDetailOpenBtnDisabled: {default: true},
+
+      // 相亲页是否要占满屏幕（width:100%）
+      isDetailFilled: {default: true},
+
+
+      detailTitleWidth:{default:150},
+
+      //详细侧边栏的宽度
+      detailDivWidth: {default: 300,},
+      // 标题行的高度
+      divTitleHeight: {default: 70, type: Number},
+      //默认的 展开按钮的宽度
+      defaultDetailOpenBtnWidth: {default: 110, type: Number},
+
+      // 是否隐藏detail
+      ifDetailHidden: {default: false}
+    },
+
+    data() {
+      return {}
+    },
+    computed: {
+      windowWidth() {
+        return this.$store.state.window.width
+      },
+      ifTitleHidden() {
+        return this.windowWidth < 992
+      },
+      //隐藏后显示的标题宽度
+      detailOpenDivWidth() {
+        return this.windowWidth < 992 ? 18 : this.defaultDetailOpenBtnWidth
+      },
+    },
+    methods: {
+      openDetailDiv() {
+        this.$emit('update:ifDetailDivShow', true);
+      },
+      closeDetailDiv() {
+        this.$emit('update:ifDetailDivShow', false);
+        // this.ifDetailDivShow=false;
+      },
+
+      clickDetailDivTitle() {
+        this.$emit('update:ifDetailDivShow', !this.ifDetailDivShow);
+      }
+    },
+    watch: {}
+
+  }
+</script>
