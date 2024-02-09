@@ -1,0 +1,6 @@
+set _PATH_SOURCE_FILE=%PATH_WORKING_FOLDER%\%1%
+set _PATH_CONTRAST_JSON=%PATH_DICT_FILE%
+
+echo Брвы%1%
+node render.js 
+

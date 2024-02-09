@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../../css/tglAll.css"/>
+    <link rel="stylesheet" href="finder.css"/>
+
+    <script src="../../js/jq-ud-ch.js"></script>
+    <script src="../../js/uikit.js"></script>
+    <script src="../../js/utils.js"></script>
+    <script src="../../js/uikit-icons.js"></script>
+    <script src="../../js/vue.js"></script>
+
+
+    <script src="./finder.js"></script>
+
+
+</head>
+
+<style>
+
+</style>
+
+<body>
+<div id="queryCache">
+    <div>
+
+        <div style="position: absolute;top:0; height: 50px;left: 20px;right:0;">
+            <div class="  uk-overflow-auto padding5 uk-width-1-1" style="min-width: 800px;">
+
+                <div class="lt uk-margin-right padding5">
+                    <span class="text16 uk-text-primary">tagLyst Finder</span>
+                </div>
+
+                <div class="lt uk-margin-medium-right " style="width: 250px;">
+                    <div class="uk-inline  uk-width-1-1">
+                        <input id="keyword" class="lt uk-input" type="text" v-model="keyword"
+                               @keyup.enter="enterKeywordInput" placeholder="搜索关键字">
+
+                        <span class=" uk-position-center-right ">
+                        <span style="position: relative;top:-4px;">|</span><i
+                                class="tgl-icon-search padding5 uk-icon-link " @click="enterKeywordInput"
+                                style="cursor: pointer;font-size: 18px"></i>
+                    </span>
+                    </div>
+
+                </div>
+
+                <!--<div class="uk-margin-medium-right" style="width: 200px;">-->
+
+                <!--<div class=" uk-margin-small-top uk-grid-small " uk-grid>-->
+                <!--<label><input class="uk-radio " type="radio" value="table" v-model="DBType"-->
+                <!--@change="clickDBTypeRadio">表格类文件</label>-->
+                <!--<label><input class="uk-radio " type="radio" value="text" v-model="DBType"-->
+                <!--@change="clickDBTypeRadio">文本类文件</label>-->
+                <!--</div>-->
+                <!--</div>-->
+
+                <!--表格类型-->
+                <div class="lt no-select padding5"
+                     style="-webkit-app-region: no-drag; margin-top: 0px; margin-right: 12px;">
+                    <span
+                            id="Pa82655741e633e9c7ddf290dc2808bdf">
+                        <div class="lt">
+                            <button type="button" class="uk-button-default uk-button-small rc4 clickable"
+                                    aria-expanded="false">
+                                <i class="tgl-icon-files-empty opacity60"></i>
+                                &nbsp;
+                                <span>表格类型</span>
+                                &nbsp;
+                                <i class="tgl-icon-circle-down"></i>
+                            </button>
+                            <div uk-dropdown="mode: click; pos:bottom;"
+                                 class="la uk-dropdown uk-dropdown-bottom-center"
+                                 style="top: 39px; left: 270.867px;"
+                            >
+                                <ul class="uk-nav uk-dropdown-nav">
+                                    <li><a @click="clickDBTypeRadio('table')" href="#">
+                                        <i class="tgl-icon-file-excel tgl-tag-red"></i>
+                                        &nbsp;表格类文件</a>
+                                    </li>
+
+                                    <li>
+                                        <a @click="clickDBTypeRadio('text')" href="#">
+                                            <i class="tgl-icon-file-text tgl-tag-red"></i>
+                                    &nbsp;文本类文件</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+
+                <div class="lt  padding5 uk-margin-left">
+                    <h3 :title="fileCacheObj['boxRootPath']" class="uk-h3">当前资料库：{{fileCacheObj["boxName"]}}</h3>
+
+                </div>
+
+
+
+                <div class="rt padding5">
+                    <div style="margin-right: 2px; margin-top: 0px;">
+
+
+                        <a @click="enterKeywordInput(1)"  class="tgl-card-corner-link-primary" aria-expanded="false">
+                            <i class="tgl-icon-spinner2"></i>&nbsp;
+                            <span>刷新</span>
+                        </a>
+
+                         <a v-if="!fileCacheObj['isFinderQueryOnly']"
+                            @click="clickExportTableButton"
+                            class="tgl-card-corner-link "
+                            aria-expanded="false">
+                            <i class="tgl-icon-file-excel"></i>&nbsp;
+                        <span>导出</span>
+                         </a>
+
+
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        <!--分页-->
+        <div style="position: absolute;height:70px; top:50px; left:0;right:0">
+
+            <div class="uk-position-left uk-margin-left">
+            <div  class=" uk-text-muted">
+                <div v-show='winObj["keyword"]'>默认关键字:{{winObj["keyword"]?winObj["keyword"].replace(/\|/g,"/").replace(/\^/g,","):""}}</div>
+                <div v-show='winObj["filePathList"]'>
+                    当前查询结果在受限的文件列表中
+                </div>
+                <div v-show="isMaxLimitNumExceed">记录数超过限制，将只查询前{{pagination.totalRecNum}}条数据</div>
+            </div>
+            </div>
+
+            <div style="" class="padding5">
+                <div class="uk-text-small uk-flex-nowrap uk-text-center  uk-width-1-1 uk-flex-center">
+                    <span class="uk-text-muted uk-text-small">共有{{pagination.totalRecNum}}条记录</span>
+                    <span>跳转到</span>
+                    <input @blur="changePageNum(pagination.pageNum)" type="text" class="uk-input uk-form-small "
+                           v-model="pagination.pageNum" style="width:40px;height:20px!important;">
+                    <span class="uk-text-small">页</span>
+                </div>
+                <ul class="uk-pagination  uk-flex-center uk-margin-small">
+                    <li @click="changePageNum(null,'previous')" v-if="pagination.pageNum>1"><a href="#"><span
+                            uk-pagination-previous></span></a></li>
+                    <li v-if="pagination.pageNum>4" @click="changePageNum(1)">
+                        <a href="#">1</a>
+                    </li>
+                    <li v-if="pagination.pageNum>3" class="uk-disabled"><span>...</span></li>
+                    <li :class="{'uk-active':eachPage==pagination.pageNum}" @click="changePageNum(eachPage)"
+                        v-if="(eachPage<pagination.pageNum+3 && eachPage>pagination.pageNum-3) "
+                        v-for="eachPage in pagination.totalPageNum">
+                        <a href="#">{{eachPage}}</a>
+                    </li>
+                    <li v-if="pagination.pageNum<=pagination.totalPageNum-3" class="uk-disabled"><span>...</span></li>
+                    <li v-if="pagination.pageNum<=pagination.totalPageNum-4"
+                        @click="changePageNum(pagination.totalPageNum)">
+                        <a href="#">{{pagination.totalPageNum}}</a>
+                    </li>
+                    <li @click="changePageNum(null,'next')" v-if="pagination.pageNum<pagination.totalPageNum"><a
+                            href="#"><span uk-pagination-next></span></a></li>
+                </ul>
+
+            </div>
+        </div>
+
+
+
+
+
+        <!--展示表格-->
+        <div   class="uk-overflow-auto" style="position: absolute;top:130px;bottom:10px; right:20px;left:20px;">
+
+            <div v-if="(DBType=='table' && _.isEmpty(dbData['table'])) || (DBType=='text' && _.isEmpty(dbData['text']))"
+                 v-show="!isLoading"
+            >
+
+                <div class="ca text14 grey margin20">
+                    没有发现符合条件的记录
+                </div>
+                <div class="ca comment grey-light margin20">
+                    您可以改变检索条件，再次进行查阅。
+                </div>
+            </div>
+
+            <div v-show="isLoading"   class=" uk-padding uk-width-1-1 xlr-card-title uk-text-center uk-h3" >
+
+                <div uk-spinner></div>
+            </div>
+
+            <!--文本类-->
+            <div v-if="DBType=='text'">
+                <table v-for="(xTable,xHeaderListString) in dbData['text']"
+                       class="uk-table uk-table-expand uk-table-hover uk-table-striped">
+                    <thead>
+                    <th class=""
+                        @click="clickTableHeader('fullPath')"
+                        :style="{'min-width':columnWidthList['text'][xHeaderListString]['fullPath']+'px'}"
+
+                    >
+                        文件名称
+                        <i v-show="filed4Sort.rowIndex2Sort=='fullPath' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='fullPath' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                    </th>
+                    <th class=""
+                        @click="clickTableHeader('mtime')"
+                        :style="{'min-width':columnWidthList['text'][xHeaderListString]['mtime']+'px'}"
+                    >
+                        更新时间
+                        <i v-show="filed4Sort.rowIndex2Sort=='mtime' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='mtime' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                    </th>
+
+                    <th v-for="(xHeader,xHeaderIndex) in  xHeaderListString.split(',')"
+                        @click="clickTableHeader('content')"
+                        :style="{'min-width':columnWidthList['text'][xHeaderListString][xHeaderIndex]+'px'}">
+                        内容
+                        <i v-show="filed4Sort.rowIndex2Sort=='content' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='content' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                    </th>
+                    </thead>
+                    <!--<th v-for="xNum in 25" style="min-width: 50px;">第{{xNum}}列</th>-->
+                    <tr v-for="rowObj in xTable" style="">
+                        <td class="table-border-left">
+                            <span v-if="fileCacheObj['isFinderQueryOnly']"> {{getBaseName(rowObj["fullPath"])}}</span>
+                            <a v-if="!fileCacheObj['isFinderQueryOnly']" class="uk-link" @click="clickTableFullPath(rowObj['fullPath'])">
+                                {{getBaseName(rowObj["fullPath"])}}
+                            </a>
+
+                        </td>
+                        <td class="table-border-left uk-text-muted comment">
+                            {{rowObj["mtime"]}}
+
+                        </td>
+                        <td class="table-border-left" v-for="(xHeader,xIndex) in rowObj['header'].split(',')">
+                            <span v-html="rowObj['content']"></span>
+                            <!--{{replaceLink(rowObj["content"],'text',xHeaderListString,xIndex)}}-->
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!--{{filed4Sort}}-->
+
+            <!--表格类-->
+            <div v-if="DBType=='table'">
+                <table v-for="(xTable,xHeaderListString) in dbData['table']"
+                       class="uk-table uk-table-expand uk-table-hover uk-table-striped table-border-wide uk-margin-large-bottom"
+
+                >
+                    <thead>
+                    <th @click="clickTableHeader('fullPath')"
+                        class=""
+                        :style="{'min-width':columnWidthList['table'][xHeaderListString]['fullPath']+'px'}"
+                    >
+                        文件名称
+                        <i v-show="filed4Sort.rowIndex2Sort=='fullPath' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='fullPath' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+
+                    </th>
+                    <th @click="clickTableHeader('mtime')"
+                        class=""
+                        :style="{'min-width':columnWidthList['table'][xHeaderListString]['mtime']+'px'}"
+                    >
+                        更新时间
+                        <i v-show="filed4Sort.rowIndex2Sort=='mtime' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='mtime' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                    </th>
+                    <th @click="clickTableHeader('sheetName')"
+                        class=""
+                        :style="{'min-width':columnWidthList['table'][xHeaderListString]['sheetName']+'px'}"
+                    >
+                        sheet名称
+                        <i v-show="filed4Sort.rowIndex2Sort=='sheetName' && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='sheetName' && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                    </th>
+                    <th :class="{'headerWithFilter':searchingHeaderList[xHeader]}"
+                        :style="{'min-width':columnWidthList['table'][xHeaderListString][xHeaderIndex]+'px'}"
+                        @click="clickTableHeader('row.'+xHeaderIndex)"
+                        v-for="(xHeader,xHeaderIndex) in  xHeaderListString.split(',')"
+                    >
+                        {{xHeader}}
+                        <i v-show="filed4Sort.rowIndex2Sort=='row.'+xHeaderIndex && filed4Sort.rowSortDirection==1"
+                           uk-icon="icon: triangle-up"></i>
+                        <i v-show="filed4Sort.rowIndex2Sort=='row.'+xHeaderIndex && filed4Sort.rowSortDirection==-1"
+                           uk-icon="icon: triangle-down"></i>
+                        <span v-if="searchingHeaderList[xHeader]" class=" uk-badge badge-small">{{searchingHeaderList[xHeader]}}</span>
+
+                    </th>
+
+                    </thead>
+                    <!--<th v-for="xNum in 25" style="min-width: 50px;">第{{xNum}}列</th>-->
+                    <tr v-for="rowObj in xTable" style="" class="">
+                        <td class="table-border-left"
+                        >
+                            <span v-if="fileCacheObj['isFinderQueryOnly']"> {{getBaseName(rowObj["fullPath"])}}</span>
+                            <a v-if="!fileCacheObj['isFinderQueryOnly']" class="uk-link" @click="clickTableFullPath(rowObj['fullPath'])">
+                                {{getBaseName(rowObj["fullPath"])}}
+                            </a>
+                        </td>
+                        <td class="table-border-left uk-text-muted comment">
+                            {{rowObj["mtime"]}}
+                        </td>
+                        <td class="table-border-left uk-text-muted comment">
+                            {{rowObj["sheetName"]}}
+                        </td>
+                        <td class="table-border-left"
+                            v-for="(xHeader,xIndex) in rowObj['header'].split(',')">
+                            <span v-html="rowObj['row'][xIndex]"></span>
+                            <!--{{rowObj['row'][xIndex]}}-->
+                        </td>
+                    </tr>
+                </table>
+
+
+            </div>
+
+
+
+
+        </div>
+
+
+
+        <!--右边工具栏-->
+        <div v-if="DBType=='table'" class="uk-position-center-right">
+            <i uk-icon="icon: triangle-left" @click="clickOpenOffCanvas" uk-toggle="target: #offcanvas"></i>
+        </div>
+
+
+        <div v-show="DBType=='table'" class="" id="offcanvas" uk-offcanvas="flip: true;bg-close:false">
+            <div class="uk-offcanvas-bar ">
+
+                <div style="position: absolute;top:0;height: 95px;left: 0;right:0" class="padding5 uk-text-center">
+
+
+
+                    <h3 class="uk-text-center">列头筛选</h3>
+                    <div>
+                        <button @click="clickOffcanvasStartSearchBtn" class="uk-button uk-button-default uk-button-small"><i class="tgl-icon-search"></i>&nbsp;开始筛选</button>
+                        <button @click="clickOffcanvasClearFiltersBtn" class="uk-button uk-button-default uk-button-small"><i class="tgl-icon-bin "></i>&nbsp;清空筛选</button>
+                    </div>
+                </div>
+                <!--table 列名筛选工具栏-->
+                <div class="uk-overflow-auto " style="position: absolute;top:100px;bottom:10px;left: 20px;right:20px;">
+                    <div class="uk-height-1-1">
+                    <ul uk-accordion>
+                        <li v-for="(xHeaderObj,xHeader) in headerFilterList">
+                            <h4 @click="clickOffcanvasHeader(xHeader)" class="uk-accordion-title">
+                                {{xHeader}}
+                                <span v-if="xHeaderObj.length" class="uk-badge">{{xHeaderObj.length}}</span>
+                            </h4>
+                            <div class="uk-accordion-content ">
+                                <!--算符选择，及筛选-->
+                                <div v-for="(xHeaderFilter,xHeaderIndex) in xHeaderObj"
+                                     class="uk-margin-small-bottom uk-inline uk-width-1-1">
+
+                                    <select class="uk-float-left uk-select uk-form-small " style="width: 60px;"
+                                            v-model="xHeaderFilter.type">
+                                        <option value="$regex">包含</option>
+                                        <option value="$eq">等于</option>
+                                        <option value="$lt">小于</option>
+                                        <option value="$gt">大于</option>
+                                        <option value="$tag">标签</option>
+                                    </select>
+                                    <div class="uk-float-left" style="width: 140px;"><input
+                                            @keyup.enter="enterKeywordInput" type="text" class="uk-input uk-form-small"
+                                            v-model="xHeaderFilter.value"></div>
+                                    <span class="uk-position-center-right">
+                                        <i style="cursor: pointer;"
+                                           @click="clickOffCanvasDeleteFilterIcon(xHeaderObj,xHeaderIndex,xHeader)"
+                                           uk-icon="icon: close;ratio:0.8"></i>
+                                   </span>
+                                    <div style="clear: both;"></div>
+                                </div>
+
+
+                                <div  class="width100  tgl-menu-button-group line-height-small la">
+                                    <a  @click="clickOffCanvasAddFilterIcon(xHeaderObj)" class=" comment">
+                                    <i class="tgl-icon-plus tgl-tag-green"></i>
+                                    &nbsp;&nbsp;添加筛选条件
+                                </a>
+                                </div>
+
+
+                                <!--标签内容-->
+                                <!-- checkbox 列表组 -->
+                                <!--xx{{checkBoxOptions}}-->
+                                <div v-if="headerCheckBoxOptionList[xHeader] && get$tagFilterIndex(xHeaderObj)!=-1"
+                                     class="uk-grid-small uk-child-width-auto uk-margin-small-top" uk-grid>
+                                    <label class="uk-form-label uk-width-1-1">
+                                        <input type="text" class="uk-input uk-form-small"
+                                           placeholder="标签筛选"    v-model="offCanvasTagsInputFilter">
+                                    </label>
+                                    <div v-for="(xTagName,xTagIndex) in  getFilteredTags(headerCheckBoxOptionList[xHeader]['tags'],xHeaderObj)"
+                                         class="uk-animation-fade"
+                                         style="margin-top: 15px;"
+                                    >
+                                        <div
+                                                :class="{'filter-checked':_.indexOf(headerCheckBoxOptionList[xHeader]['checkedKeys'],xTagIndex)!=-1,'filter-no-checked':_.indexOf(headerCheckBoxOptionList[xHeader]['checkedKeys'],xTagIndex)==-1}"
+                                        >
+                                            <label style="cursor: pointer;">
+                                                <input v-model="headerCheckBoxOptionList[xHeader]['checkedKeys']"
+                                                       :value="xTagIndex"
+                                                       class="uk-checkbox"
+                                                       type="checkbox"
+                                                       @click="clickOffCanvasTag(headerCheckBoxOptionList[xHeader],xHeaderObj)"
+                                                       style=" display: none;"/>
+                                                {{xTagName}}
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+                        </li>
+
+                    </ul>
+                    </div>
+                </div>
+
+
+
+                <div class="uk-position-center-left">
+                    <i uk-icon="icon: triangle-right" class="uk-offcanvas-close"></i>
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+</body>
+</html>

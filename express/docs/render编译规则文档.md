@@ -1,0 +1,60 @@
+# render.js功能：
+
+读取对照表，和需编译的文件，文件中<%ecms:res ResID%>，<%ecms:doc FileName%>，替换成相应对照表value字符或FileName文件中的内容
+
+### sample:
+需编译的文件 test.html:
+
+	 <%ecms:res ReadMe%> 
+	<br>
+	 <%ecms:doc header.html%>
+
+对照表  ver.cn.json:
+
+	{test.html:{
+				"ReadMe":"说明文档",
+				"AboutUs":"关于我们"
+				}
+	}
+
+header.html :
+
+	<div>这里是头部</div>	
+
+编译后：
+
+		说明文档
+		<br>
+		<div>这里是头部</div>	
+	
+
+## 注意
+* 对照表和对照文件（header.html）放在同一个目录
+* 不同的编译文件需在对照表中对应的 文件名key 建立对照
+比如对照表 test1.html:{xxx:yyy} 翻译不了 test2.html 中的
+<%ecms:res xxx%>
+
+* 对照文件中可以有<%ecms:res xxx%> 但不能有<%ecms:doc xxx%>
+
+## (1)替换html内容
+
+<%ecms:res ResID%>, ResID 是对照表的key，会编译成对应的value
+
+**e.g：**
+
+<%ecms:res About Us%>, ResID="About Us"
+
+{"About Us":"关于我们"}
+
+## (2)引入 HTML 代码片段
+
+<%ecms:doc FileName%>, FileName 是对应的文件名，包括相对于对照表的路径
+
+**e.g：**
+
+<%ecms:doc ./header.html%>, FileName="./header.html "
+
+./header.html
+<div>
+这是头部替换的html内容
+</div>
